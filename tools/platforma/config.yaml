@@ -1,0 +1,16 @@
+module:
+  name: platforma
+  version: 0.1.0
+  api_version: 1
+
+defaults:
+  env: local
+  profile: core
+
+profiles:
+  core:
+    targets:
+      - users
+      - orders
+      - notifications
+      - gateway
