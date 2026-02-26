@@ -1,0 +1,82 @@
+# Monorepo-wide ignore rules
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.vscode-test/
+*.swp
+*.swo
+*~
+*.orig
+
+# Python caches and virtualenvs
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.hypothesis/
+.ipynb_checkpoints/
+.cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+site/
+build/
+dist/
+.eggs/
+*.egg
+*.egg-info/
+pip-wheel-metadata/
+.venv/
+venv/
+env/
+ENV/
+**/pyproject.toml.bak
+
+# Node / frontend artifacts
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+yarn-debug.log*
+yarn-error.log*
+npm-debug.log*
+pnpm-debug.log*
+
+# Terraform and local infra state
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Local env/secrets
+.env
+.env.*
+*.env
+.envrc
+.direnv/
+**/.env
+**/.env.*
+**/.secrets/
+**/secrets/
+
+# Local runtime/temp artifacts
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+*.bak
+*.pid
+
+# Platforma local runtime state (generated)
+tools/platforma/state/*
+!tools/platforma/state/.gitkeep

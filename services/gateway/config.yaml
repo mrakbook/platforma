@@ -1,0 +1,19 @@
+service_key: gateway
+service: platforma-svc-gateway
+version: 0.1.0
+runtime: python
+local:
+  config_env:
+    APP_HOST: 0.0.0.0
+    APP_PORT: 50301
+    SERVICE_NAME: platforma-svc-gateway
+    APP_MESSAGE: "Hello from gateway service"
+platforma:
+  dependencies: [users, orders, notifications]
+  capabilities: [run, lint, test, build-image]
+  commands:
+    run: python3 src/main.py
+    lint: python3 -c "import ast,pathlib; ast.parse(pathlib.Path(\"src/main.py\").read_text())"
+    test: python3 -m unittest discover -s tests -p 'test_*.py'
+  health:
+    path: /health
