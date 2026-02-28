@@ -30,6 +30,7 @@ platforma::discover_targets_uncached() {
 		[[ -n "${service_key}" ]] || platforma::die "Missing service_key in ${cfg}"
 		expected_name="platforma-svc-${service_key}"
 		[[ "${service_name}" == "${expected_name}" ]] || platforma::die "Invalid service name in ${cfg}: expected ${expected_name}, got ${service_name}"
+		[[ "${target}" == "${service_key}" ]] || platforma::die "Invalid target key in ${cfg}: directory '${target}' must match service_key '${service_key}'"
 
 		printf '%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n' \
 			"${target}" "${service_key}" "${service_name}" "${version}" "${runtime}" "${target_path}" "${port}" \
@@ -38,9 +39,94 @@ platforma::discover_targets_uncached() {
 	shopt -u nullglob
 }
 
+platforma::validate_discovery_catalog() {
+	local catalog="$1"
+	[[ -n "${catalog}" ]] || platforma::die "No target configs found under services/*/config.yaml"
+
+	local -a targets=()
+	local -a service_keys=()
+	local -a services=()
+
+	local line
+	while IFS= read -r line; do
+		[[ -n "${line}" ]] || continue
+
+		local target service_key service_name version runtime path
+		target="$(platforma::record_field "${line}" 0)"
+		service_key="$(platforma::record_field "${line}" 1)"
+		service_name="$(platforma::record_field "${line}" 2)"
+		version="$(platforma::record_field "${line}" 3)"
+		runtime="$(platforma::record_field "${line}" 4)"
+		path="$(platforma::record_field "${line}" 5)"
+
+		[[ -n "${target}" ]] || platforma::die "Catalog invariant failed: empty target name"
+		[[ -n "${service_key}" ]] || platforma::die "Catalog invariant failed: empty service_key for target '${target}'"
+		[[ -n "${service_name}" ]] || platforma::die "Catalog invariant failed: empty service name for target '${target}'"
+		[[ -n "${runtime}" ]] || platforma::die "Catalog invariant failed: empty runtime for target '${target}'"
+		[[ -n "${version}" ]] || platforma::die "Catalog invariant failed: empty version for target '${target}'"
+		platforma::validate_semver "${version}" || platforma::die "Catalog invariant failed: invalid semver '${version}' for target '${target}'"
+
+		local expected_service expected_path
+		expected_service="platforma-svc-${service_key}"
+		expected_path="services/${target}"
+		[[ "${service_name}" == "${expected_service}" ]] || platforma::die "Catalog invariant failed: target '${target}' must use service '${expected_service}', got '${service_name}'"
+		[[ "${target}" == "${service_key}" ]] || platforma::die "Catalog invariant failed: target '${target}' must match service_key '${service_key}'"
+		[[ "${path}" == "${expected_path}" ]] || platforma::die "Catalog invariant failed: target '${target}' must use path '${expected_path}', got '${path}'"
+
+		if platforma::array_contains "${target}" "${targets[@]:-}"; then
+			platforma::die "Catalog invariant failed: duplicate target '${target}'"
+		fi
+		if platforma::array_contains "${service_key}" "${service_keys[@]:-}"; then
+			platforma::die "Catalog invariant failed: duplicate service_key '${service_key}'"
+		fi
+		if platforma::array_contains "${service_name}" "${services[@]:-}"; then
+			platforma::die "Catalog invariant failed: duplicate service name '${service_name}'"
+		fi
+
+		targets+=("${target}")
+		service_keys+=("${service_key}")
+		services+=("${service_name}")
+	done < <(printf '%s\n' "${catalog}")
+
+	while IFS= read -r line; do
+		[[ -n "${line}" ]] || continue
+
+		local target deps_csv caps_csv
+		target="$(platforma::record_field "${line}" 0)"
+		deps_csv="$(platforma::record_field "${line}" 7)"
+		caps_csv="$(platforma::record_field "${line}" 8)"
+
+		local dep
+		local -a deps=()
+		IFS=',' read -r -a deps <<<"${deps_csv}"
+		for dep in "${deps[@]-}"; do
+			[[ -n "${dep}" ]] || continue
+			[[ "${dep}" != "${target}" ]] || platforma::die "Catalog invariant failed: target '${target}' cannot depend on itself"
+			platforma::array_contains "${dep}" "${targets[@]:-}" || platforma::die "Catalog invariant failed: target '${target}' depends on unknown target '${dep}'"
+		done
+
+		local cap
+		local -a caps=()
+		local -a seen_caps=()
+		IFS=',' read -r -a caps <<<"${caps_csv}"
+		for cap in "${caps[@]-}"; do
+			[[ -n "${cap}" ]] || continue
+			case "${cap}" in
+				run | lint | test | build-image) ;;
+				*) platforma::die "Catalog invariant failed: target '${target}' has unsupported capability '${cap}'" ;;
+			esac
+			if platforma::array_contains "${cap}" "${seen_caps[@]:-}"; then
+				platforma::die "Catalog invariant failed: target '${target}' has duplicate capability '${cap}'"
+			fi
+			seen_caps+=("${cap}")
+		done
+	done < <(printf '%s\n' "${catalog}")
+}
+
 platforma::discover_targets() {
 	if [[ "${PLATFORMA_DISCOVERY_CACHE_VALID}" != "1" ]]; then
 		PLATFORMA_DISCOVERY_CACHE="$(platforma::discover_targets_uncached)"
+		platforma::validate_discovery_catalog "${PLATFORMA_DISCOVERY_CACHE}"
 		PLATFORMA_DISCOVERY_CACHE_VALID=1
 	fi
 	if [[ -n "${PLATFORMA_DISCOVERY_CACHE}" ]]; then

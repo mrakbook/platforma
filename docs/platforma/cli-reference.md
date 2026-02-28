@@ -2,19 +2,43 @@
 
 ## Dispatch Model
 
-The command contract is intentionally stable:
-
 `./platforma -> router -> target/platform/workflows -> task handlers`
 
-`./platforma` stays thin. Dispatch and implementation are split into modules.
+`./platforma` is a thin bootstrapper. Command behavior is implemented in modular
+shell components under `tools/platforma/`.
 
 ## Module Map
 
-- `tools/platforma/core/router.sh`: top-level command parsing and command-group dispatch
-- `tools/platforma/core/target.sh`: target discovery, catalog, graph, capability matrix
-- `tools/platforma/core/platform.sh`: runtime lifecycle orchestration
-- `tools/platforma/tasks/run.sh`: target task execution
-- `tools/platforma/lib/common.sh`: shared logging, validation, and utility helpers
+- `tools/platforma/core/router.sh`: top-level command parsing and dispatch
+- `tools/platforma/core/target.sh`: discovery, catalog, graph, capabilities, invariants
+- `tools/platforma/core/platform.sh`: orchestration lifecycle operations
+- `tools/platforma/tasks/run.sh`: task command resolution and execution
+- `tools/platforma/lib/common.sh`: shared utility and validation functions
+
+## Discovery and Catalog
+
+Discovery source:
+- `services/*/config.yaml`
+
+Catalog fields:
+- `target`
+- `service_key`
+- `service`
+- `version`
+- `runtime`
+- `path`
+- `port`
+- `dependencies`
+- `capabilities`
+- `health_path`
+
+Catalog invariants:
+- `target == service_key`
+- `service == platforma-svc-<service_key>`
+- unique `target`, `service_key`, `service`
+- dependency targets must exist
+- no self-dependencies
+- capability values restricted to `run`, `lint`, `test`, `build-image`
 
 ## Core Commands
 
@@ -22,7 +46,7 @@ The command contract is intentionally stable:
 - `./platforma targets list`
 - `./platforma targets catalog --json`
 - `./platforma targets graph --profile core`
-- `./platforma targets capabilities`
+- `./platforma targets capabilities [target]`
 
 ## Runtime Commands
 
