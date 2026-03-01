@@ -167,6 +167,7 @@ Commands:
   build-image <target>             Demo image build task
 
   up [--profile <name>]            Start profile targets in background
+  doctor [--profile <name>]        Run local preflight checks
   down                             Stop all running targets
   restart [--profile <name>]       Restart profile targets
   status                           Show target process status
@@ -316,6 +317,25 @@ platforma::main() {
 			esac
 		done
 		platforma::up_profile "${profile}" "${env_name}"
+		;;
+
+	doctor)
+		while [[ $# -gt 0 ]]; do
+			case "$1" in
+			--profile)
+				profile="$2"
+				shift 2
+				;;
+			--profile=*)
+				profile="${1#*=}"
+				shift
+				;;
+			*)
+				shift
+				;;
+			esac
+		done
+		platforma::doctor "${profile}"
 		;;
 
 	down)
