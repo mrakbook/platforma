@@ -1,5 +1,67 @@
 #!/usr/bin/env bash
 
+platforma::doctor() {
+	local profile="$1"
+	local issues=0
+
+	printf '%-14s %-7s %s\n' "CHECK" "STATUS" "DETAIL"
+
+	local catalog target_count
+	catalog="$(platforma::discover_targets)"
+	target_count="$(printf '%s\n' "${catalog}" | awk 'NF { count += 1 } END { print count + 0 }')"
+	if [[ "${target_count}" -gt 0 ]]; then
+		printf '%-14s %-7s %s\n' "discovery" "ok" "${target_count} targets discovered"
+	else
+		printf '%-14s %-7s %s\n' "discovery" "fail" "no targets discovered"
+		issues=$((issues + 1))
+	fi
+
+	local profile_target_count=0
+	local profile_target
+	while IFS= read -r profile_target; do
+		[[ -n "${profile_target}" ]] || continue
+		profile_target_count=$((profile_target_count + 1))
+		if ! platforma::target_exists "${profile_target}"; then
+			printf '%-14s %-7s %s\n' "profile" "fail" "unknown profile target '${profile_target}'"
+			issues=$((issues + 1))
+		fi
+	done < <(platforma::profile_targets "${profile}")
+
+	if [[ "${profile_target_count}" -gt 0 ]]; then
+		printf '%-14s %-7s %s\n' "profile" "ok" "${profile_target_count} targets in profile '${profile}'"
+	else
+		printf '%-14s %-7s %s\n' "profile" "fail" "profile '${profile}' resolved to zero targets"
+		issues=$((issues + 1))
+	fi
+
+	local ordered
+	ordered="$(platforma::ordered_targets_for_profile "${profile}")"
+	local ordered_count
+	ordered_count="$(printf '%s\n' "${ordered}" | awk 'NF { count += 1 } END { print count + 0 }')"
+	printf '%-14s %-7s %s\n' "order" "ok" "${ordered_count} targets resolved in dependency order"
+
+	local missing_run=0
+	local target record caps
+	while IFS= read -r target; do
+		[[ -n "${target}" ]] || continue
+		record="$(platforma::record_for_target "${target}")"
+		caps="$(platforma::record_field "${record}" 8)"
+		if ! platforma::csv_contains "${caps}" "run"; then
+			missing_run=$((missing_run + 1))
+			issues=$((issues + 1))
+		fi
+	done < <(printf '%s\n' "${ordered}")
+
+	if [[ "${missing_run}" -eq 0 ]]; then
+		printf '%-14s %-7s %s\n' "capabilities" "ok" "all profile targets support run"
+	else
+		printf '%-14s %-7s %s\n' "capabilities" "fail" "${missing_run} profile targets missing run capability"
+	fi
+
+	[[ "${issues}" -eq 0 ]] || platforma::die "doctor failed with ${issues} issue(s)"
+	platforma::log "INFO" "doctor checks passed for profile '${profile}'"
+}
+
 platforma::up_profile() {
 	local profile="$1"
 	local env_name="$2"

@@ -1,29 +1,29 @@
 # Platforma Demo Repository
 
 Platforma is a script-first platform engineering demo focused on consistent
-software delivery through one contract:
+software delivery through one command contract:
 
 `./platforma`
 
-The project is intentionally minimal in business logic and heavy on delivery
-architecture, orchestration discipline, and metadata-driven automation.
+The repository is intentionally light on business logic and heavy on delivery
+architecture, deterministic orchestration, and metadata-driven automation.
 
 ## Architecture Overview
 
-### Command Contract Layer
-- One stable command surface for local and CI execution
-- Thin entrypoint script that delegates to modular internals
-- Consistent command behavior for `targets`, `runtime`, and `workflow` groups
+### 1. Command Contract Layer
+- Stable command surface for local, CI, and release flows
+- Thin entrypoint script with modular internals
+- Uniform behavior across developer machines and automation runners
 
-### Script Core Layer
+### 2. Script Core Layer
 - `tools/platforma/core/router.sh`: command routing and dispatch
 - `tools/platforma/core/target.sh`: discovery, catalog, graph, invariants
-- `tools/platforma/core/platform.sh`: lifecycle orchestration
-- `tools/platforma/tasks/run.sh`: task execution
-- `tools/platforma/lib/common.sh`: shared utilities
+- `tools/platforma/core/platform.sh`: local orchestration lifecycle
+- `tools/platforma/tasks/run.sh`: task execution and process launch
+- `tools/platforma/lib/common.sh`: shared utility and validation functions
 
-### Config and Discovery Layer
-- All targets are discovered from `services/*/config.yaml`
+### 3. Config and Discovery Layer
+- Targets are discovered from `services/*/config.yaml`
 - Metadata is normalized into a runtime catalog with:
   - `target`
   - `service_key`
@@ -32,18 +32,30 @@ architecture, orchestration discipline, and metadata-driven automation.
   - `runtime`
   - `capabilities`
   - `dependencies`
-- Hard invariant enforced: `service == platforma-svc-<service_key>`
+- Canonical naming invariant enforced:
+  `service == platforma-svc-<service_key>`
 
-### Runtime and Orchestration Layer
-- Profile-based target resolution from `tools/platforma/config.yaml`
-- Dependency-ordered startup via topological traversal
-- PID/log state tracking in `tools/platforma/state`
-- Health checks resolved from target metadata
+### 4. Orchestration That Mirrors CI
+Local startup follows the same deterministic platform contract used by
+automation:
 
-### Governance and Quality Layer
-- Catalog invariants enforced before command execution
-- Naming and version consistency checks for reliable release flow
-- Contract and quality checks centralized in platform workflows
+- resolve profile targets
+- compute dependency order
+- start targets in deterministic order
+- track process state with PID and log files
+- expose status and health visibility through platform commands
+
+Runtime state location:
+- `tools/platforma/state/pids`
+- `tools/platforma/state/logs`
+
+### 5. Preflight and Guardrails
+`./platforma doctor` runs preflight checks before execution:
+- discovery validity
+- profile resolution
+- capability coverage for runnable targets
+
+Guardrails keep delivery behavior predictable and reduce local/CI drift.
 
 ## Demo Services
 
@@ -52,20 +64,22 @@ architecture, orchestration discipline, and metadata-driven automation.
 - `notifications`
 - `gateway`
 
-Each service is a small Python HTTP demo with metadata-defined commands and
-runtime settings.
+Services are intentionally small Python HTTP demos with metadata-defined
+runtime behavior and dependencies.
 
 ## Common Commands
 
 ```bash
 ./platforma help
+./platforma doctor --profile core
 ./platforma targets list
 ./platforma targets catalog --json
 ./platforma targets graph --profile core
 ./platforma targets capabilities
-./platforma up --profile core
+./platforma up --profile core --env local
 ./platforma status
-./platforma health
+./platforma health --profile core
+./platforma logs
 ./platforma down
 ```
 
@@ -74,6 +88,7 @@ runtime settings.
 - `docs/platforma/cli-reference.md`
 - `docs/platforma/target-config-guide.md`
 - `docs/platforma/target-contribution-guide.md`
+- `docs/platforma/script-system-diagrams.md`
 
 ## Author and Maintainer
 
