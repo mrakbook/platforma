@@ -12,6 +12,7 @@
 - `tools/platforma/core/router.sh`: top-level command parsing and dispatch
 - `tools/platforma/core/target.sh`: discovery, catalog, graph, capabilities, invariants
 - `tools/platforma/core/platform.sh`: orchestration lifecycle and preflight checks
+- `tools/platforma/workflows/versions.sh`: versioning workflows and sync checks
 - `tools/platforma/tasks/run.sh`: task command resolution and execution
 - `tools/platforma/lib/common.sh`: shared utilities and validations
 
@@ -82,6 +83,11 @@ Catalog invariants:
 - `./platforma quality hardening`
 - `./platforma quality compat`
 - `./platforma quality all`
+
+Versioning sync-check validates:
+- service config semver format
+- service config and `pyproject.toml` version alignment
+- canonical service naming invariants
 
 ## Author and Maintainer
 

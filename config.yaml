@@ -1,3 +1,13 @@
 platform:
   name: platforma
   version: 0.1.0
+
+versioning:
+  domains:
+    service:
+      source: services/*/config.yaml
+      projection: services/*/pyproject.toml
+    platform:
+      source: config.yaml
+    module:
+      source: tools/platforma/config.yaml

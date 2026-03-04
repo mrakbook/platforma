@@ -57,6 +57,24 @@ Runtime state location:
 
 Guardrails keep delivery behavior predictable and reduce local/CI drift.
 
+### 6. Versioning Workflow
+Versioning is treated as platform workflow, not a manual step. Three version
+domains are tracked:
+
+- service version (`services/*/config.yaml` and `services/*/pyproject.toml`)
+- platform version (`config.yaml`)
+- module version (`tools/platforma/config.yaml`)
+
+The sync gate is:
+
+- `./platforma versions sync-check`
+
+Version bumps are exposed through one command surface:
+
+- `./platforma versions service <target> <major|minor|patch>`
+- `./platforma versions platform <major|minor|patch>`
+- `./platforma versions module <major|minor|patch>`
+
 ## Demo Services
 
 - `users`
@@ -76,6 +94,7 @@ runtime behavior and dependencies.
 ./platforma targets catalog --json
 ./platforma targets graph --profile core
 ./platforma targets capabilities
+./platforma versions sync-check
 ./platforma up --profile core --env local
 ./platforma status
 ./platforma health --profile core
@@ -89,6 +108,8 @@ runtime behavior and dependencies.
 - `docs/platforma/target-config-guide.md`
 - `docs/platforma/target-contribution-guide.md`
 - `docs/platforma/script-system-diagrams.md`
+- `docs/platforma/compatibility-policy.md`
+- `docs/platforma/architecture-and-workflows.md`
 
 ## Author and Maintainer
 
