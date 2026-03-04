@@ -14,6 +14,7 @@ source "${PLATFORMA_ROOT}/tools/platforma/lib/common.sh"
 source "${PLATFORMA_ROOT}/tools/platforma/core/target.sh"
 source "${PLATFORMA_ROOT}/tools/platforma/tasks/run.sh"
 source "${PLATFORMA_ROOT}/tools/platforma/core/platform.sh"
+source "${PLATFORMA_ROOT}/tools/platforma/workflows/versions.sh"
 source "${PLATFORMA_ROOT}/tools/platforma/core/router.sh"
 
 platforma::main "$@"

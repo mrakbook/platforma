@@ -2,6 +2,15 @@ module:
   name: platforma
   version: 0.1.0
   api_version: 1
+  versioning:
+    bump_types:
+      - major
+      - minor
+      - patch
+    sync_check:
+      enforce_semver: true
+      enforce_pyproject_alignment: true
+      enforce_service_naming: true
 
 defaults:
   env: local
