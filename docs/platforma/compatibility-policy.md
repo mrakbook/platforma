@@ -39,3 +39,15 @@ The check enforces:
 - `./platforma versions module <major|minor|patch>`
 
 Version bump commands mutate canonical version sources in place.
+
+## Migration Compatibility
+
+Migration workflow is part of delivery safety policy:
+
+- `./platforma migrations verify` runs before release gate completion
+- migration files must remain deterministic and ordered by filename sequence
+- migration ownership stays within `services/<target>/database/schemas`
+
+Destructive migration operations require explicit review and should be guarded
+by additional controls in production systems (checksums, drift detection,
+rollback procedures).

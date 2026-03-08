@@ -11,3 +11,9 @@ versioning:
       source: config.yaml
     module:
       source: tools/platforma/config.yaml
+
+migrations:
+  schemas_root: services
+  file_extension: .sql
+  order: lexical
+  verify_before_deploy: true

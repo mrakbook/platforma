@@ -14,6 +14,8 @@
 - `tools/platforma/core/platform.sh`: orchestration lifecycle and preflight checks
 - `tools/platforma/workflows/versions.sh`: versioning workflows and sync checks
 - `tools/platforma/tasks/run.sh`: task command resolution and execution
+- `tools/platforma/workflows/migrations.sh`: migration verification workflow
+- `tools/platforma/tasks/migrate.sh`: migration task execution
 - `tools/platforma/lib/common.sh`: shared utilities and validations
 
 ## Discovery and Catalog
@@ -77,7 +79,8 @@ Catalog invariants:
 - `./platforma versions service <target> <major|minor|patch>`
 - `./platforma versions platform <major|minor|patch>`
 - `./platforma versions module <major|minor|patch>`
-- `./platforma migrations verify`
+- `./platforma migrations verify [target]`
+- `./platforma migrate <target> [--dry-run]`
 - `./platforma ci contract-check`
 - `./platforma ci release-gate`
 - `./platforma quality hardening`
@@ -88,6 +91,12 @@ Versioning sync-check validates:
 - service config semver format
 - service config and `pyproject.toml` version alignment
 - canonical service naming invariants
+
+Migration verification validates:
+- migration filename format (`NNN_name.sql`)
+- deterministic, sequential migration ordering
+- non-empty migration files
+- baseline destructive statement policy checks
 
 ## Author and Maintainer
 

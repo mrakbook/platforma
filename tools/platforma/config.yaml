@@ -11,6 +11,12 @@ module:
       enforce_semver: true
       enforce_pyproject_alignment: true
       enforce_service_naming: true
+  migrations:
+    filename_pattern: "NNN_name.sql"
+    state_dir: tools/platforma/state/migrations
+    safety:
+      block_drop_table: true
+      block_drop_column: true
 
 defaults:
   env: local

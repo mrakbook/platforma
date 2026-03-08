@@ -45,10 +45,6 @@ platforma::ci_release_gate() {
 	platforma::log "INFO" "ci release-gate passed"
 }
 
-platforma::migrations_verify() {
-	platforma::log "INFO" "no migration workflows in demo mode"
-}
-
 platforma::help() {
 	cat <<'EOF'
 Usage:
@@ -59,6 +55,7 @@ Commands:
   lint <target|--all>              Run lint task
   test <target|--all>              Run test task
   build-image <target>             Demo image build task
+  migrate <target> [--dry-run]     Execute target migrations
 
   up [--profile <name>]            Start profile targets in background
   doctor [--profile <name>]        Run local preflight checks
@@ -78,7 +75,7 @@ Commands:
   versions platform <major|minor|patch>
   versions module <major|minor|patch>
 
-  migrations verify
+  migrations verify [target]
 
   ci contract-check
   ci release-gate
@@ -333,11 +330,36 @@ platforma::main() {
 		esac
 		;;
 
+	migrate)
+		local target="${1:-}"
+		[[ -n "${target}" ]] || platforma::die "migrate requires <target>"
+		shift || true
+
+		local dry_run=0
+		while [[ $# -gt 0 ]]; do
+			case "$1" in
+			--dry-run)
+				dry_run=1
+				shift
+				;;
+			*)
+				platforma::die "Unknown migrate option: $1"
+				;;
+			esac
+		done
+		platforma::migrate_target "${target}" "${dry_run}"
+		;;
+
 	migrations)
 		local sub="${1:-verify}"
+		[[ $# -gt 0 ]] && shift || true
 		case "${sub}" in
-		verify | up)
-			platforma::migrations_verify
+		verify)
+			platforma::migrations_verify "${1:-}"
+			;;
+		up)
+			[[ $# -ge 1 ]] || platforma::die "migrations up requires <target>; use 'migrate <target>'"
+			platforma::migrate_target "$1" 0
 			;;
 		*)
 			platforma::die "Unknown migrations subcommand: ${sub}"
