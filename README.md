@@ -20,6 +20,8 @@ architecture, deterministic orchestration, and metadata-driven automation.
 - `tools/platforma/core/target.sh`: discovery, catalog, graph, invariants
 - `tools/platforma/core/platform.sh`: local orchestration lifecycle
 - `tools/platforma/tasks/run.sh`: task execution and process launch
+- `tools/platforma/tasks/migrate.sh`: migration task execution
+- `tools/platforma/workflows/migrations.sh`: migration verification workflow
 - `tools/platforma/lib/common.sh`: shared utility and validation functions
 
 ### 3. Config and Discovery Layer
@@ -75,6 +77,18 @@ Version bumps are exposed through one command surface:
 - `./platforma versions platform <major|minor|patch>`
 - `./platforma versions module <major|minor|patch>`
 
+### 7. Migration Safety Workflow
+Migration execution is guarded by a verify-before-run workflow:
+
+- deterministic ordering by numbered SQL files
+- explicit target ownership under `services/<target>/database/schemas`
+- safety checks before execution (naming, sequence, and destructive statement policy)
+
+Primary commands:
+
+- `./platforma migrations verify`
+- `./platforma migrate <target> --dry-run`
+
 ## Demo Services
 
 - `users`
@@ -95,6 +109,8 @@ runtime behavior and dependencies.
 ./platforma targets graph --profile core
 ./platforma targets capabilities
 ./platforma versions sync-check
+./platforma migrations verify
+./platforma migrate users --dry-run
 ./platforma up --profile core --env local
 ./platforma status
 ./platforma health --profile core

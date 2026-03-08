@@ -20,6 +20,8 @@ workflow modules compose into one delivery contract.
 5. Task and Workflows:
    - `tools/platforma/tasks/run.sh`
    - `tools/platforma/workflows/versions.sh`
+   - `tools/platforma/tasks/migrate.sh`
+   - `tools/platforma/workflows/migrations.sh`
 
 ## Versioning Workflow
 
@@ -48,3 +50,26 @@ Supported commands:
 - invalid semver
 - config and projected version drift
 - naming invariant violations that break discovery contracts
+
+## Migration Workflow
+
+Migration files are owned by service:
+- `services/<target>/database/schemas/*.sql`
+
+Migration templates are stored in:
+- `tools/platforma/templates/migration-presync.yaml`
+- `tools/platforma/templates/migration-runner.py`
+
+Supported migration commands:
+- `./platforma migrations verify [target]`
+- `./platforma migrate <target> [--dry-run]`
+
+Migration verify checks:
+- deterministic ordering from migration filename sequence
+- strict filename convention
+- non-empty SQL files
+- baseline destructive-statement safety checks
+
+Execution model:
+- `--dry-run` reports ordered migrations and checksums without applying
+- non-dry-run records applied migration state in `tools/platforma/state/migrations`

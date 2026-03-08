@@ -1,0 +1,18 @@
+apiVersion: platforma.io/v1
+kind: MigrationPreSync
+metadata:
+  name: migration-presync
+spec:
+  checks:
+    - name: migration-order
+      enabled: true
+      description: Verify migrations are ordered and sequential
+    - name: migration-safety
+      enabled: true
+      description: Reject destructive statements in baseline safety policy
+    - name: migration-checksum
+      enabled: true
+      description: Verify migration file checksums are stable across runs
+  execution:
+    mode: verify-before-deploy
+    failOnError: true
