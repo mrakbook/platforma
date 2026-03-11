@@ -22,6 +22,8 @@ workflow modules compose into one delivery contract.
    - `tools/platforma/workflows/versions.sh`
    - `tools/platforma/tasks/migrate.sh`
    - `tools/platforma/workflows/migrations.sh`
+   - `tools/platforma/workflows/quality.sh`
+   - `tools/platforma/workflows/ci.sh`
 
 ## Versioning Workflow
 
@@ -73,3 +75,37 @@ Migration verify checks:
 Execution model:
 - `--dry-run` reports ordered migrations and checksums without applying
 - non-dry-run records applied migration state in `tools/platforma/state/migrations`
+
+## CI Contract Workflow
+
+CI command workflow logic is implemented in `tools/platforma/workflows/ci.sh`
+and routed through `./platforma ci ...`.
+
+Supported commands:
+- `./platforma ci contract-check`
+- `./platforma ci release-gate`
+
+Contract-check behavior:
+- verifies hardening checks and legacy command rejection
+- validates workflow files use `./platforma` command paths
+- blocks direct service command bypass from workflow definitions
+
+Release gate order:
+1. `./platforma migrations verify`
+2. `./platforma versions sync-check`
+3. `./platforma ci contract-check`
+4. `./platforma quality all`
+
+## Quality Workflow
+
+Quality workflow logic is implemented in `tools/platforma/workflows/quality.sh`
+and routed through `./platforma quality ...`.
+
+Supported commands:
+- `./platforma quality hardening`
+- `./platforma quality compat`
+- `./platforma quality all`
+
+Quality checks enforce:
+- legacy command path hardening
+- canonical service naming invariants for compatibility

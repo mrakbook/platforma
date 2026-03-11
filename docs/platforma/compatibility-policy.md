@@ -23,6 +23,19 @@ The `./platforma` command surface is a public contract.
 - Changing required arguments is a breaking change
 - Adding optional flags or non-breaking subcommands is backward compatible
 
+## CI Contract Enforcement
+
+Automation must execute platform command paths instead of service-specific
+commands.
+
+Required:
+- workflow commands call `./platforma`
+- release safety checks run through `./platforma ci release-gate`
+
+Forbidden:
+- legacy command paths (`./v??`, `v??::`, `tools/v??`, `docs/v??`)
+- direct service execution from workflow files
+
 ## Sync Gate
 
 Use `./platforma versions sync-check` before release.
@@ -31,6 +44,16 @@ The check enforces:
 - valid semver in service config metadata
 - config and `pyproject.toml` version alignment
 - canonical naming invariants required by discovery
+
+## Release Gate Chain
+
+Use `./platforma ci release-gate` as the single pre-release gate.
+
+Execution order:
+1. `./platforma migrations verify`
+2. `./platforma versions sync-check`
+3. `./platforma ci contract-check`
+4. `./platforma quality all`
 
 ## Bump Workflows
 

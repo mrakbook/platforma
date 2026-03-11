@@ -22,6 +22,8 @@ architecture, deterministic orchestration, and metadata-driven automation.
 - `tools/platforma/tasks/run.sh`: task execution and process launch
 - `tools/platforma/tasks/migrate.sh`: migration task execution
 - `tools/platforma/workflows/migrations.sh`: migration verification workflow
+- `tools/platforma/workflows/quality.sh`: hardening and compatibility checks
+- `tools/platforma/workflows/ci.sh`: CI contract-check and release gate chain
 - `tools/platforma/lib/common.sh`: shared utility and validation functions
 
 ### 3. Config and Discovery Layer
@@ -89,6 +91,24 @@ Primary commands:
 - `./platforma migrations verify`
 - `./platforma migrate <target> --dry-run`
 
+### 8. CI Contract and Quality Gates
+Automation follows the same command contract as local execution:
+
+- CI workflows must run `./platforma` commands
+- legacy command paths are blocked
+- release gate is chained under one command
+
+Gate chain:
+
+- `./platforma migrations verify`
+- `./platforma versions sync-check`
+- `./platforma ci contract-check`
+- `./platforma quality all`
+
+Single entrypoint:
+
+- `./platforma ci release-gate`
+
 ## Demo Services
 
 - `users`
@@ -111,6 +131,9 @@ runtime behavior and dependencies.
 ./platforma versions sync-check
 ./platforma migrations verify
 ./platforma migrate users --dry-run
+./platforma ci contract-check
+./platforma quality all
+./platforma ci release-gate
 ./platforma up --profile core --env local
 ./platforma status
 ./platforma health --profile core
@@ -126,6 +149,7 @@ runtime behavior and dependencies.
 - `docs/platforma/script-system-diagrams.md`
 - `docs/platforma/compatibility-policy.md`
 - `docs/platforma/architecture-and-workflows.md`
+- `docs/platforma/migration-guide.md`
 
 ## Author and Maintainer
 
