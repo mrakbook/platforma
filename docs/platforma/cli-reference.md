@@ -13,6 +13,8 @@
 - `tools/platforma/core/target.sh`: discovery, catalog, graph, capabilities, invariants
 - `tools/platforma/core/platform.sh`: orchestration lifecycle and preflight checks
 - `tools/platforma/workflows/versions.sh`: versioning workflows and sync checks
+- `tools/platforma/workflows/quality.sh`: hardening and compatibility quality gates
+- `tools/platforma/workflows/ci.sh`: command-contract validation and release gate
 - `tools/platforma/tasks/run.sh`: task command resolution and execution
 - `tools/platforma/workflows/migrations.sh`: migration verification workflow
 - `tools/platforma/tasks/migrate.sh`: migration task execution
@@ -97,6 +99,17 @@ Migration verification validates:
 - deterministic, sequential migration ordering
 - non-empty migration files
 - baseline destructive statement policy checks
+
+CI contract-check enforces:
+- forbidden legacy command patterns are absent
+- workflow files (when present) execute `./platforma`
+- workflow files avoid direct service command bypass
+
+Release gate execution order:
+- `./platforma migrations verify`
+- `./platforma versions sync-check`
+- `./platforma ci contract-check`
+- `./platforma quality all`
 
 ## Author and Maintainer
 

@@ -1,50 +1,5 @@
 #!/usr/bin/env bash
 
-platforma::quality_hardening() {
-	platforma::require_command rg
-
-	local search_paths=()
-	local path
-	for path in README.md docs tools services posts .github/workflows; do
-		if [[ -e "${PLATFORMA_ROOT}/${path}" ]]; then
-			search_paths+=("${PLATFORMA_ROOT}/${path}")
-		fi
-	done
-
-	local matches
-	matches="$(rg -n --no-heading '(\./v[a-z]{2}\b|[a-z]{3}::|tools/v[a-z]{2}|docs/v[a-z]{2})' "${search_paths[@]}" || true)"
-	if [[ -n "${matches}" ]]; then
-		printf '%s\n' "${matches}" >&2
-		platforma::die "quality hardening failed: legacy command references found"
-	fi
-
-	platforma::log "INFO" "quality hardening passed"
-}
-
-platforma::quality_compat() {
-	platforma::validate_service_naming || platforma::die "quality compat failed"
-	platforma::log "INFO" "quality compat passed"
-}
-
-platforma::quality_all() {
-	platforma::quality_hardening
-	platforma::quality_compat
-	platforma::log "INFO" "quality all passed"
-}
-
-platforma::ci_contract_check() {
-	platforma::quality_hardening
-	platforma::log "INFO" "ci contract-check passed"
-}
-
-platforma::ci_release_gate() {
-	platforma::migrations_verify
-	platforma::versions_sync_check
-	platforma::ci_contract_check
-	platforma::quality_all
-	platforma::log "INFO" "ci release-gate passed"
-}
-
 platforma::help() {
 	cat <<'EOF'
 Usage:
@@ -370,11 +325,14 @@ platforma::main() {
 	ci)
 		local sub="${1:-}"
 		[[ -n "${sub}" ]] || platforma::die "ci requires a subcommand"
+		shift || true
 		case "${sub}" in
 		contract-check)
+			[[ $# -eq 0 ]] || platforma::die "Unknown ci option: $1"
 			platforma::ci_contract_check
 			;;
 		release-gate)
+			[[ $# -eq 0 ]] || platforma::die "Unknown ci option: $1"
 			platforma::ci_release_gate
 			;;
 		*)
@@ -385,14 +343,18 @@ platforma::main() {
 
 	quality)
 		local sub="${1:-all}"
+		[[ $# -gt 0 ]] && shift || true
 		case "${sub}" in
 		hardening)
+			[[ $# -eq 0 ]] || platforma::die "Unknown quality option: $1"
 			platforma::quality_hardening
 			;;
 		compat)
+			[[ $# -eq 0 ]] || platforma::die "Unknown quality option: $1"
 			platforma::quality_compat
 			;;
 		all)
+			[[ $# -eq 0 ]] || platforma::die "Unknown quality option: $1"
 			platforma::quality_all
 			;;
 		*)
