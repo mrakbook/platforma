@@ -1,0 +1,156 @@
+name: dev-cd
+
+on:
+  push:
+    branches:
+      - main
+      - feature/**
+      - codex/feature/**
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: Deployment scope mode
+        required: true
+        default: changed
+        type: choice
+        options:
+          - changed
+          - all
+          - selected
+      selected_targets:
+        description: Comma-separated targets when scope is selected
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-cd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  resolve-scope:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.scope.outputs.matrix }}
+      has_targets: ${{ steps.scope.outputs.has_targets }}
+      target_names: ${{ steps.scope.outputs.target_names }}
+      scope_mode: ${{ steps.scope.outputs.scope_mode }}
+      scope_reason: ${{ steps.scope.outputs.scope_reason }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install platform prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq ripgrep
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Collect platform catalog
+        id: catalog
+        run: |
+          catalog="$(./platforma targets catalog --json)"
+          printf 'catalog=%s\n' "$(printf '%s' "${catalog}" | jq -c '.')" >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve deployment scope
+        id: scope
+        env:
+          CATALOG_JSON: ${{ steps.catalog.outputs.catalog }}
+          EVENT_BEFORE: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+          SCOPE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.scope || 'changed' }}
+          SELECTED_TARGETS: ${{ github.event_name == 'workflow_dispatch' && inputs.selected_targets || '' }}
+        run: |
+          if [[ "${EVENT_NAME}" == "push" && -n "${EVENT_BEFORE}" && "${EVENT_BEFORE}" != "0000000000000000000000000000000000000000" ]]; then
+            base_sha="${EVENT_BEFORE}"
+          elif git rev-parse HEAD^ >/dev/null 2>&1; then
+            base_sha="$(git rev-parse HEAD^)"
+          else
+            base_sha="$(git rev-parse HEAD)"
+          fi
+
+          head_sha="$(git rev-parse HEAD)"
+          changed_files="$(git diff --name-only "${base_sha}" "${head_sha}")"
+
+          printf 'Base SHA: %s\n' "${base_sha}"
+          printf 'Head SHA: %s\n' "${head_sha}"
+          printf 'Changed files:\n%s\n' "${changed_files:-<none>}"
+
+          python3 .github/scripts/resolve_dev_cd_scope.py
+
+  release-gate:
+    runs-on: ubuntu-latest
+    needs: resolve-scope
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install platform prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq ripgrep
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Show resolved scope
+        run: |
+          printf 'Scope mode: %s\n' "${{ needs.resolve-scope.outputs.scope_mode }}"
+          printf 'Scope reason: %s\n' "${{ needs.resolve-scope.outputs.scope_reason }}"
+          printf 'Targets: %s\n' "${{ needs.resolve-scope.outputs.target_names || '<none>' }}"
+
+      - name: Run release gate
+        run: ./platforma ci release-gate
+
+  deploy-dev:
+    runs-on: ubuntu-latest
+    needs:
+      - resolve-scope
+      - release-gate
+    if: needs.resolve-scope.outputs.has_targets == 'true'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve-scope.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install platform prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq ripgrep
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Show target context
+        run: |
+          printf 'Scope mode: %s\n' "${{ needs.resolve-scope.outputs.scope_mode }}"
+          printf 'Scope reason: %s\n' "${{ needs.resolve-scope.outputs.scope_reason }}"
+          printf 'Deploy target: %s\n' "${{ matrix.target }}"
+          printf 'Service: %s\n' "${{ matrix.service }}"
+          printf 'Version: %s\n' "${{ matrix.version }}"
+          printf 'Path: %s\n' "${{ matrix.path }}"
+
+      - name: Validate target commands
+        run: |
+          ./platforma targets capabilities "${{ matrix.target }}"
+          ./platforma test "${{ matrix.target }}"
+
+      - name: Build target image
+        run: ./platforma build-image "${{ matrix.target }}"
+
+      - name: Deploy target (demo)
+        run: |
+          printf 'deploy target=%s service=%s version=%s path=%s\n' \
+            "${{ matrix.target }}" \
+            "${{ matrix.service }}" \
+            "${{ matrix.version }}" \
+            "${{ matrix.path }}"

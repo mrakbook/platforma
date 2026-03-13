@@ -24,6 +24,9 @@ workflow modules compose into one delivery contract.
    - `tools/platforma/workflows/migrations.sh`
    - `tools/platforma/workflows/quality.sh`
    - `tools/platforma/workflows/ci.sh`
+6. Delivery Automation:
+   - `.github/workflows/dev-cd.yml`
+   - `.github/scripts/resolve_dev_cd_scope.py`
 
 ## Versioning Workflow
 
@@ -109,3 +112,21 @@ Supported commands:
 Quality checks enforce:
 - legacy command path hardening
 - canonical service naming invariants for compatibility
+
+## Dev CD Workflow
+
+Development deployment automation is defined in `.github/workflows/dev-cd.yml`.
+
+Workflow behavior:
+- resolves the target catalog from `./platforma targets catalog --json`
+- computes deployment scope as `changed`, `all`, or `selected`
+- runs `./platforma ci release-gate` before target deployment jobs
+- builds and deploys only the resolved targets
+
+Scope resolution rules:
+- service-path changes select the matching target only
+- changes to `platforma`, `config.yaml`, `tools/platforma/`, or workflow files fan out to all targets
+- manual dispatch can force all targets or a selected target subset
+
+The workflow helper `.github/scripts/resolve_dev_cd_scope.py` keeps the YAML
+generic while preserving metadata-driven target selection.
