@@ -109,6 +109,20 @@ Single entrypoint:
 
 - `./platforma ci release-gate`
 
+### 9. Change-Aware Dev CD
+Development deployment scope is derived from platform metadata instead of
+hardcoded per-service workflow logic.
+
+- matrix source comes from `./platforma targets catalog --json`
+- release gate runs before deployment work starts
+- changed service paths deploy only their matching targets
+- platform-level changes fan out to all targets
+- manual runs can choose `changed`, `all`, or `selected` scope
+
+Workflow entrypoint:
+
+- `.github/workflows/dev-cd.yml`
+
 ## Demo Services
 
 - `users`
@@ -150,6 +164,7 @@ runtime behavior and dependencies.
 - `docs/platforma/compatibility-policy.md`
 - `docs/platforma/architecture-and-workflows.md`
 - `docs/platforma/migration-guide.md`
+- `docs/platforma/dev-cd-workflow.md`
 
 ## Author and Maintainer
 
